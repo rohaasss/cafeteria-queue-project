@@ -233,5 +233,71 @@ public class CafeteriaManager {
             System.out.printf("   Average wait time: %.2f min.%n", avgWait);
         }
     }
+
+    //замеры производительности
+    static void runPerformanceTest() {
+        System.out.println("\n🔬 PERFORMANCE MEASUREMENT");
+        System.out.println("═".repeat(50));
+
+        int[] sizes = {1000, 5000, 10000, 20000, 50000};
+
+        for (int N : sizes) {
+            //пропускаем тест, если N слишком большой для слабых компьютеров
+            if (N > 30000 && Runtime.getRuntime().totalMemory() < 500_000_000) {
+                System.out.println("Skipping N=" + N + " (low memory)");
+                continue;
+            }
+
+            //тест ARRIVE (добавление в конец)
+            queue.clear();
+            arrivalTime.clear();
+
+            //прогрев JVM
+            for (int i = 0; i < 1000; i++) {
+                queue.addLast("warmup" + i);
+            }
+            queue.clear();
+
+            //настоящий замер
+            long startArrive = System.nanoTime();
+            for (int i = 0; i < N; i++) {
+                String name = "Person" + i;
+                queue.addLast(name);
+                arrivalTime.put(name, 0);
+            }
+            long endArrive = System.nanoTime();
+            long timeArrive = endArrive - startArrive;
+
+            //тест LEAVE (поиск и удаление)
+            long startLeave = System.nanoTime();
+            for (int i = 0; i < N; i++) {
+                queue.removeFirstOccurrence("Person" + i);
+            }
+            long endLeave = System.nanoTime();
+            long timeLeave = endLeave - startLeave;
+
+            //результаты
+            System.out.println("\n N = " + N + " operations:");
+            System.out.printf("   ARRIVE (O(1) each): %8d ms total, %6d ns per operation%n",
+                    timeArrive / 1_000_000, timeArrive / N);
+            System.out.printf("   LEAVE  (O(n) each): %8d ms total, %6d ns per operation%n",
+                    timeLeave / 1_000_000, timeLeave / N);
+            System.out.printf("    LEAVE/ARRIVE ratio: %.2fx%n",
+                    (double) timeLeave / timeArrive);
+        }
+
+        System.out.println("\n" + "═".repeat(50));
+        System.out.println("CONCLUSION: LEAVE is slower than ARRIVE because:");
+        System.out.println("  - ARRIVE: O(1) — just add to the end");
+        System.out.println("  - LEAVE: O(n) — need to find element in the queue");
+        System.out.println("  - The larger the queue, the more noticeable the difference\n");
+
+        //очищаем после теста
+        queue.clear();
+        arrivalTime.clear();
+        currentTime = 0;
+        totalWaitTime = 0;
+        servedCount = 0;
+    }
 }
 
