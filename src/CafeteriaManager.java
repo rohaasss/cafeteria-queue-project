@@ -72,17 +72,166 @@ public class CafeteriaManager {
 
         System.out.println("МЕНЕДЖЕР ОЧЕРЕДИ В СТОЛОВОЙ");
         System.out.println(" Команды:");
-        System.out.println("  HELP        - показать помощь");
-        System.out.println("  ARRIVE имя  - встать в очередь");
-        System.out.println("  VIP_ARRIVE  - встать в начало");
-        System.out.println("  SERVE       - обслужить следующего");
-        System.out.println("  LEAVE имя   - уйти из очереди");
-        System.out.println("  PEEK        - кто следующий");
-        System.out.println("  SIZE        - размер очереди");
-        System.out.println("  TICK минуты - увеличить время");
-        System.out.println("  STATS       - статистика");
-        System.out.println("  PRINT       - показать очередь");
-        System.out.println("  TEST        - замер производительности");
-        System.out.println("  EXIT        - выход");
+        System.out.println("  HELP        - show this help");
+        System.out.println("  ARRIVE имя  - join the queue");
+        System.out.println("  VIP_ARRIVE  - join at the front");
+        System.out.println("  SERVE       - serve next person");
+        System.out.println("  LEAVE имя   - leave the queue");
+        System.out.println("  PEEK        - see who's next");
+        System.out.println("  SIZE        - queue size");
+        System.out.println("  TICK минуты - advance time");
+        System.out.println("  STATS       - show statistics");
+        System.out.println("  PRINT       - show entire queue");
+        System.out.println("  TEST        - performance test");
+        System.out.println("  EXIT        - exit program");
+    }
+
+    static void handleArrive(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Error: specify name. Example: ARRIVE Aliya");
+            return;
+        }
+
+        String name = args[0];
+
+        if (name.isEmpty() || name.contains(" ")) {
+            System.out.println("Error: name cannot be empty or contain spaces");
+            return;
+        }
+
+        if (arrivalTime.containsKey(name)) {
+            System.out.println("Error: " + name + " already in system");
+            return;
+        }
+
+        queue.addLast(name);
+        arrivalTime.put(name, currentTime);
+
+        System.out.println(name + " arrived at time " + currentTime +
+                ". Queue size = " + queue.size());
+    }
+
+    static void handleVipArrive(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Error: specify name. Example: VIP_ARRIVE Amir");
+            return;
+        }
+
+        String name = args[0];
+
+        if (name.isEmpty() || name.contains(" ")) {
+            System.out.println("Error: name cannot be empty or contain spaces");
+            return;
+        }
+
+        if (arrivalTime.containsKey(name)) {
+            System.out.println("Error: person with name " + name + " already in system");
+            return;
+        }
+
+        queue.addFirst(name);
+        arrivalTime.put(name, currentTime);
+
+        System.out.println(" VIP " + name + " arrived at time " + currentTime +
+                " (to the front). Queue size = " + queue.size());
+    }
+
+    static void handleServe() {
+        if (queue.isEmpty()) {
+            System.out.println(" No one to serve — queue is empty");
+            return;
+        }
+
+        String name = queue.removeFirst();
+        int waitTime = currentTime - arrivalTime.get(name);
+
+        servedCount++;
+        totalWaitTime += waitTime;
+        arrivalTime.remove(name);
+
+        System.out.println(" Served: " + name + " (waited " + waitTime + " min).");
+    }
+
+    static void handleLeave(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Error: specify name. Example: LEAVE Aliya");
+            return;
+        }
+
+        String name = args[0];
+
+        if (!queue.contains(name)) {
+            System.out.println(" Not found: " + name + " is not in queue");
+            return;
+        }
+
+        queue.removeFirstOccurrence(name);
+        arrivalTime.remove(name);
+
+        System.out.println(" " + name + " left the queue. Queue size = " + queue.size());
+    }
+
+    static void handlePeek() {
+        if (queue.isEmpty()) {
+            System.out.println("Queue is empty");
+        } else {
+            System.out.println(" Next: " + queue.peekFirst());
+        }
+    }
+
+    static void handleSize() {
+        System.out.println(" Queue size: " + queue.size());
+    }
+
+    static void handlePrint() {
+        if (queue.isEmpty()) {
+            System.out.println("Queue is empty");
+        } else {
+            System.out.print(" Queue (front -> back): [");
+            boolean first = true;
+            for (String name : queue) {
+                if (!first) {
+                    System.out.print(", ");
+                }
+                System.out.print(name);
+                first = false;
+            }
+            System.out.println("]");
+        }
+    }
+
+    static void handleTick(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Error: specify minutes. Example: TICK 5");
+            return;
+        }
+
+        try {
+            int minutes = Integer.parseInt(args[0]);
+
+            if (minutes < 0) {
+                System.out.println("Error: minutes cannot be negative");
+                return;
+            }
+
+            currentTime += minutes;
+            System.out.println("  Time advanced by " + minutes + " min. Current time = " + currentTime);
+
+        } catch (NumberFormatException e) {
+            System.out.println("Error: enter an integer number of minutes");
+        }
+    }
+
+    static void handleStats() {
+        System.out.println(" STATISTICS:");
+        System.out.println("   People served: " + servedCount);
+
+        if (servedCount == 0) {
+            System.out.println("   Average wait time: 0.00 min.");
+        } else {
+            double avgWait = (double) totalWaitTime / servedCount;
+            System.out.printf("   Average wait time: %.2f min.%n", avgWait);
+        }
     }
 }
+
